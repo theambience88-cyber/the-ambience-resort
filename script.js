@@ -630,17 +630,28 @@
   document.getElementById("footerYear").textContent = String(new Date().getFullYear());
 
   /* ----------------------------------------------------------------- */
-  /* 12. Enquiry form -> pre-filled WhatsApp message                    */
+  /* 12. Enquiry form -> BUKINN website enquiry inbox                  */
   /* ----------------------------------------------------------------- */
   const enquiryForm = document.getElementById("enquiryForm");
-  enquiryForm.addEventListener("submit", function (e) {
+  enquiryForm.addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const name = document.getElementById("fullName").value.trim();
     const mobile = document.getElementById("mobileNumber").value.trim();
+    const status = document.getElementById("enquiryStatus");
+    const submitButton = enquiryForm.querySelector(".form-submit");
+    const integration = window.BUKINN_WEBSITE || {};
 
     if (!name || !mobile) {
       alert("Please share your name and mobile number so we can reach you.");
+      return;
+    }
+
+    if (!integration.endpoint || !integration.connectionCode) {
+      if (status) {
+        status.textContent = "The enquiry service is temporarily unavailable. Please call or WhatsApp us.";
+        status.style.color = "#a33";
+      }
       return;
     }
 
@@ -648,18 +659,76 @@
     const functionType = document.getElementById("functionType").value;
     const guests = document.getElementById("guestCount").value;
     const message = document.getElementById("enquiryMessage").value.trim();
+    const guestCount = guests ? Number(guests) : null;
 
-    const lines = [
-      "Hello! I'd like to enquire about The Ambience Resort.",
-      "Name: " + name,
-      "Mobile: " + mobile
-    ];
-    if (functionType) lines.push("Function Type: " + functionType);
-    if (date) lines.push("Event Date: " + date);
-    if (guests) lines.push("Estimated Guests: " + guests);
-    if (message) lines.push("Message: " + message);
+    const payload = {
+      connectionCode: integration.connectionCode,
+      connection_code: integration.connectionCode,
+      fullName: name,
+      full_name: name,
+      name: name,
+      mobileNumber: mobile,
+      mobile_number: mobile,
+      phone: mobile,
+      eventDate: date || null,
+      event_date: date || null,
+      functionType: functionType || null,
+      function_type: functionType || null,
+      event_type: functionType || null,
+      guestCount: guestCount,
+      guest_count: guestCount,
+      estimated_guests: guestCount,
+      message: message || null,
+      notes: message || null,
+      source: "website"
+    };
 
-    window.open(waLink(c.whatsappNumber, lines.join("\n")), "_blank");
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Sending...";
+    }
+    if (status) {
+      status.textContent = "Sending your enquiry...";
+      status.style.color = "";
+    }
+
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (integration.anonKey) {
+        headers.apikey = integration.anonKey;
+        headers.Authorization = "Bearer " + integration.anonKey;
+      }
+
+      const response = await fetch(integration.endpoint, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+
+      let result = {};
+      try { result = await response.json(); } catch (_) {}
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || "Unable to send enquiry");
+      }
+
+      enquiryForm.reset();
+      if (status) {
+        status.textContent = "Thank you! Your enquiry has been sent successfully. Our team will contact you shortly.";
+        status.style.color = "#1d6b45";
+      }
+    } catch (error) {
+      console.error("Website enquiry failed:", error);
+      if (status) {
+        status.textContent = "We couldn't send your enquiry right now. Please try again or contact us by phone.";
+        status.style.color = "#a33";
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Send Enquiry";
+      }
+    }
   });
 
 })();
