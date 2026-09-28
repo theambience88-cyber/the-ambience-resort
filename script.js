@@ -2,7 +2,7 @@
    THE AMBIENCE RESORT — SCRIPT
    Reads everything dynamic from SITE_CONFIG (site-config.js) and wires up
    navigation, hero slideshow, reveal animations, gallery + lightbox and
-   the WhatsApp-based enquiry form.
+   the BUKINN-connected enquiry form.
    ========================================================================= */
 (function () {
   "use strict";
@@ -647,7 +647,7 @@
       return;
     }
 
-    if (!integration.endpoint || !integration.connectionCode) {
+    if (!integration.endpoint || !integration.resortSlug) {
       if (status) {
         status.textContent = "The enquiry service is temporarily unavailable. Please call or WhatsApp us.";
         status.style.color = "#a33";
@@ -661,26 +661,16 @@
     const message = document.getElementById("enquiryMessage").value.trim();
     const guestCount = guests ? Number(guests) : null;
 
+    // This is the exact contract accepted by BUKINN's public
+    // submit-website-enquiry Edge Function.
     const payload = {
-      connectionCode: integration.connectionCode,
-      connection_code: integration.connectionCode,
-      fullName: name,
-      full_name: name,
+      resortSlug: integration.resortSlug,
       name: name,
-      mobileNumber: mobile,
-      mobile_number: mobile,
-      phone: mobile,
-      eventDate: date || null,
-      event_date: date || null,
-      functionType: functionType || null,
-      function_type: functionType || null,
-      event_type: functionType || null,
-      guestCount: guestCount,
-      guest_count: guestCount,
-      estimated_guests: guestCount,
-      message: message || null,
-      notes: message || null,
-      source: "website"
+      mobile: mobile,
+      eventDate: date || undefined,
+      eventType: functionType || undefined,
+      estimatedGuests: guestCount === null ? undefined : guestCount,
+      message: message || undefined
     };
 
     if (submitButton) {
@@ -693,15 +683,9 @@
     }
 
     try {
-      const headers = { "Content-Type": "application/json" };
-      if (integration.anonKey) {
-        headers.apikey = integration.anonKey;
-        headers.Authorization = "Bearer " + integration.anonKey;
-      }
-
       const response = await fetch(integration.endpoint, {
         method: "POST",
-        headers: headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
