@@ -3,7 +3,8 @@
 <script>
 window.BUKINN_WEBSITE = {
   endpoint: 'https://gakophjxmgrbbfmjlsob.supabase.co/functions/v1/submit-website-enquiry',
-  resortSlug: 'the-ambience-resort'
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdha29waGp4bWdyYmJmbWpsc29iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MDE4NzcsImV4cCI6MjEwNDA3Nzg3N30.JzZXeFwm35foctMyCh-Asfpcs4p2Jqh8ETZsUP14JGA',
+  connectionCode: 'the-ambience-resort_bdf86000b1fa8bbd'
 };
 </script>
   <head>
@@ -360,8 +361,8 @@ window.BUKINN_WEBSITE = {
           <label for="enquiryMessage">Message</label>
           <textarea id="enquiryMessage" name="enquiryMessage" rows="3" placeholder="Tell us a little about your celebration"></textarea>
 
-          <button type="submit" class="btn btn-solid form-submit">Send Enquiry</button>
           <p id="enquiryStatus" class="form-note" aria-live="polite">Your enquiry will be sent securely to The Ambience Resort team.</p>
+          <button type="submit" class="btn btn-solid form-submit">Send Enquiry</button>
         </form>
       </div>
 
