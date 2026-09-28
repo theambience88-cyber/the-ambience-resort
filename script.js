@@ -647,7 +647,7 @@
       return;
     }
 
-    if (!integration.endpoint || !integration.resortSlug) {
+    if (!integration.endpoint || !integration.connectionCode || !integration.anonKey) {
       if (status) {
         status.textContent = "The enquiry service is temporarily unavailable. Please call or WhatsApp us.";
         status.style.color = "#a33";
@@ -661,16 +661,36 @@
     const message = document.getElementById("enquiryMessage").value.trim();
     const guestCount = guests ? Number(guests) : null;
 
-    // This is the exact contract accepted by BUKINN's public
-    // submit-website-enquiry Edge Function.
+    // The deployed BUKINN integration accepts the connection code plus
+    // common customer/event field aliases. Keeping the aliases here makes
+    // this website compatible with both current and earlier BUKINN builds.
     const payload = {
-      resortSlug: integration.resortSlug,
+      connectionCode: integration.connectionCode,
+      connection_code: integration.connectionCode,
+      customerName: name,
+      customer_name: name,
+      fullName: name,
+      full_name: name,
       name: name,
+      customerMobile: mobile,
+      customer_mobile: mobile,
       mobile: mobile,
-      eventDate: date || undefined,
-      eventType: functionType || undefined,
-      estimatedGuests: guestCount === null ? undefined : guestCount,
-      message: message || undefined
+      mobileNumber: mobile,
+      mobile_number: mobile,
+      phone: mobile,
+      eventDate: date || null,
+      event_date: date || null,
+      eventType: functionType || null,
+      functionType: functionType || null,
+      function_type: functionType || null,
+      event_type: functionType || null,
+      estimatedGuests: guestCount,
+      estimated_guests: guestCount,
+      guestCount: guestCount,
+      guest_count: guestCount,
+      message: message || null,
+      notes: message || null,
+      source: "website"
     };
 
     if (submitButton) {
@@ -685,7 +705,11 @@
     try {
       const response = await fetch(integration.endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": integration.anonKey,
+          "Authorization": "Bearer " + integration.anonKey
+        },
         body: JSON.stringify(payload)
       });
 
@@ -700,12 +724,16 @@
       if (status) {
         status.textContent = "Thank you! Your enquiry has been sent successfully. Our team will contact you shortly.";
         status.style.color = "#1d6b45";
+        status.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     } catch (error) {
       console.error("Website enquiry failed:", error);
       if (status) {
-        status.textContent = "We couldn't send your enquiry right now. Please try again or contact us by phone.";
+        status.textContent = (error && error.message)
+          ? error.message
+          : "We couldn't send your enquiry right now. Please try again or contact us by phone.";
         status.style.color = "#a33";
+        status.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     } finally {
       if (submitButton) {
